@@ -57,7 +57,6 @@ const renderingLoop = () => {
 
 const init = () => {
   socket.on('connect', async () => {
-    document.querySelector('p').innerText = socket.id;
     const video = await createVideoElement(stream);
     renderingLoop();
   });
