@@ -1,18 +1,5 @@
 const defaultTimeout = 100;
 
-const socket = window.io({
-  transports: ['websocket']
-});
-
-const createVideoElement = (stream) => new Promise((resolve) => {
-  const video = document.createElement('video');
-  video.srcObject = stream;
-  video.addEventListener('canplay', () => {
-    resolve(video);
-    video.play();
-  })
-});
-
 const getStringFromBuffer = (buffer) => {
   var arrayBufferView = new Uint8Array(buffer);
   var blob = new Blob([arrayBufferView], { type: "image/jpeg" });
@@ -26,9 +13,6 @@ const renderReceivedFrame = (id, frame) => {
     const element = document.createElement('img');
     element.id = id;
     element.title = id;
-    if (id === socket.id) {
-      element.classList.add('current');
-    }
 
     document.body.appendChild(element);
     renderers.set(id, { element });
@@ -56,8 +40,11 @@ const renderingLoop = () => {
 };
 
 const init = () => {
+  const socket = window.io({
+    transports: ['websocket']
+  });
+
   socket.on('connect', async () => {
-    const video = await createVideoElement(stream);
     renderingLoop();
   });
 
