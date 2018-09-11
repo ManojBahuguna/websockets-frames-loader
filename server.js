@@ -19,23 +19,24 @@ database.connect(config.mlabURL, { useNewUrlParser: true }, (err, client) => {
 
   // Serve public folder
   app.use(express.static(path.join(__dirname, 'public')));
-  app.use(express.urlencoded({ extended: true }));
+  app.use(express.json());
 
   app.post('/login', async (req, res) => {
     try {
       const doc = await master.findOne();
+      console.log(req.body);
       if (!doc) throw new Error('Nothing in database');
       if (doc.password === req.body.password) {
         const updated = await master.updateOne(
           { _id: doc._id },
           { $set: { status: 'active' } }
         );
-        if (!updated.result.nModified) throw new Error('Status not updated!')
+        if (!updated.result.n) throw new Error('Status not updated!')
         res.json({ success: true });
         return;
       }
 
-      res.status(401).json({ success: false });
+      res.status(401).json({ success: false, message: "Passwords don't match" });
     } catch (error) {
       console.error(error);
       res.status(500).json({ success: false, error: error.message });

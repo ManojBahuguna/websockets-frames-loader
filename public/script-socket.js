@@ -51,11 +51,11 @@ const init = () => {
 
   socket.on('frame', (...data) => {
     renderReceivedFrame(...data);
-  })
-}
+  });
 
-socket.on('endstream', (id) => {
-  removeRenderer(id);
-});
+  socket.on('endstream', (id) => {
+    removeRenderer(id);
+  });
+}
 
 init();
