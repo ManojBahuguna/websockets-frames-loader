@@ -13,38 +13,6 @@ const createVideoElement = (stream) => new Promise((resolve) => {
   })
 });
 
-const createCanvasElement = (video) => {
-  const canvas = document.createElement('canvas');
-  canvas.width = video.videoWidth;
-  canvas.height = video.videoHeight;
-  canvas.videoElement = video;
-  return canvas;
-};
-
-const getCanvasFrame = (canvas) => new Promise((resolve) => {
-  const ctx = canvas.getContext('2d');
-  ctx.drawImage(canvas.videoElement, 0, 0);
-  // resolve(canvas.toDataURL('image/jpeg', 0.4));
-  canvas.toBlob((blob) => resolve(blob), 'image/jpeg', 0.4);
-});
-
-const sendFrame = (frame) => {
-  socket.emit('frame', frame);
-};
-
-const getStream = async () =>
-  await navigator.mediaDevices.getUserMedia({ video: { width: 400, height: 400 } });
-
-const startStreamingToServer = (canvas, timeout = defaultTimeout) => {
-  getCanvasFrame(canvas)
-    .then(frame => {
-      sendFrame(frame);
-      window.setTimeout(() => {
-        startStreamingToServer(canvas, timeout);
-      }, timeout);
-    });
-};
-
 const getStringFromBuffer = (buffer) => {
   var arrayBufferView = new Uint8Array(buffer);
   var blob = new Blob([arrayBufferView], { type: "image/jpeg" });
@@ -90,12 +58,7 @@ const renderingLoop = () => {
 const init = () => {
   socket.on('connect', async () => {
     document.querySelector('p').innerText = socket.id;
-
-    const stream = await getStream();
     const video = await createVideoElement(stream);
-    const canvas = createCanvasElement(video);
-    startStreamingToServer(canvas, 100);
-
     renderingLoop();
   });
 

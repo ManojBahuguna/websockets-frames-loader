@@ -19,8 +19,9 @@ app.use(express.static(path.join(__dirname, 'public')));
 const io = socketio(server, {
   transports: ['websocket']
 });
-const sendFrameToAll = (senderId, frame) => {
-  io.volatile.emit('frame', senderId, frame);
+const broadcastFrame = (senderId, frame, socket) => {
+  const emitter = socket ? socket.broadcast : io;
+  emitter.volatile.emit('frame', senderId, frame);
 };
 
 const onDisconnected = (id) => {
@@ -29,14 +30,15 @@ const onDisconnected = (id) => {
 
 io.on('connection', (socket) => {
   const { id } = socket;
-  console.log('connected', id);
+  console.log('connected ', id);
 
   socket.on('frame', (data) => {
     console.log('received from ' + id);
-    sendFrameToAll(id, data);
+    broadcastFrame(id, data, socket);
   });
 
   socket.on('disconnect', () => {
+    console.log('disconnected ' + id);
     onDisconnected(id);
   });
 });
