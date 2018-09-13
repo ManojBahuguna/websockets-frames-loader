@@ -3,7 +3,7 @@ const path = require('path');
 const express = require('express');
 const http = require('http');
 const config = require('./config');
-const socketio = require('socket.io');
+const WebSocket = require('ws');
 var database = require('mongodb').MongoClient;
 
 database.connect(config.mlabURL, { useNewUrlParser: true }, (err, client) => {
@@ -45,30 +45,29 @@ database.connect(config.mlabURL, { useNewUrlParser: true }, (err, client) => {
 
 
   // Sockets
-  const io = socketio(server, {
-    transports: ['websocket']
+  const wss = new WebSocket.Server({
+    server
   });
-  const broadcastFrame = (senderId, frame, socket) => {
-    const emitter = socket ? socket.broadcast : io;
-    emitter.volatile.emit('frame', senderId, frame);
+  const broadcastFrame = (frame, ws) => {
+    wss.clients.forEach((client) => {
+      if (client !== ws) {
+        client.send(frame);
+        console.log(frame);
+      }
+    });
   };
 
-  const onDisconnected = (id) => {
-    io.emit('endstream', id);
-  };
+  wss.on('connection', (ws) => {
+    ws.binaryType = 'blob';
+    console.log('socket connected!');
 
-  io.on('connection', (socket) => {
-    const { id } = socket;
-    console.log('connected ', id);
-
-    socket.on('frame', (data) => {
-      console.log('received from ' + id);
-      broadcastFrame(id, data, socket);
+    ws.on('message', (frame) => {
+      console.log('received frame');
+      broadcastFrame(frame, ws);
     });
 
-    socket.on('disconnect', () => {
+    ws.on('disconnect', () => {
       console.log('disconnected ' + id);
-      onDisconnected(id);
     });
   });
 

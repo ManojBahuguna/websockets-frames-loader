@@ -1,9 +1,7 @@
 const defaultTimeout = 100;
 
 const getStringFromBuffer = (buffer) => {
-  var arrayBufferView = new Uint8Array(buffer);
-  var blob = new Blob([arrayBufferView], { type: "image/jpeg" });
-  var imageUrl = window.URL.createObjectURL(blob);
+  var imageUrl = window.URL.createObjectURL(buffer);
   return imageUrl;
 };
 
@@ -22,14 +20,6 @@ const renderReceivedFrame = (id, frame) => {
   renderers.get(id).src = getStringFromBuffer(frame);
 };
 
-const removeRenderer = (id) => {
-  if (renderers.has(id)) {
-    const renderer = renderers.get(id);
-    renderer.element.remove();
-    renderers.delete(id);
-  }
-};
-
 const renderingLoop = () => {
   renderers.forEach(({ element, src }) => {
     element.src = src;
@@ -40,21 +30,17 @@ const renderingLoop = () => {
 };
 
 const init = () => {
-  const socket = window.io({
-    transports: ['websocket']
-  });
-
-  socket.on('connect', async () => {
+  const ws = new WebSocket(`ws://${location.host}/whatever`);
+  ws.binaryType = 'blob';
+  ws.addEventListener('open', async () => {
+    console.log('socket connected!');
+    window.ws = ws;
     renderingLoop();
   });
 
-
-  socket.on('frame', (...data) => {
-    renderReceivedFrame(...data);
-  });
-
-  socket.on('endstream', (id) => {
-    removeRenderer(id);
+  ws.addEventListener('message', ({ data }) => {
+    renderReceivedFrame('stream', data);
+    console.log(data);
   });
 }
 
